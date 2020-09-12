@@ -3,6 +3,7 @@ import { Octokit } from "@octokit/rest";
 import { readFile, writeFile } from "fs/promises";
 import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
+import axios from "axios";
 
 cosmicSync("sponsor");
 if (!existsSync(join(".", ".cache"))) mkdirSync(join(".", ".cache"));
@@ -66,6 +67,27 @@ export const sponsorThem = async () => {
       });
     }
   }
-  console.log(dependencies);
+  const dependenciesOrdered: Array<{
+    name: string;
+    count: number;
+    funding?: string;
+  }> = [];
+  Object.keys(dependencies).forEach((dependency) => {
+    dependenciesOrdered.push({
+      name: dependency,
+      count: dependencies[dependency],
+    });
+  });
+  for await (const dependency of Object.keys(dependencies)) {
+    let packageJson: any = null;
+    try {
+      packageJson = JSON.parse(
+        await cachedRequest(`dependency-json-${dependency}`, async () => {
+          return `https://unpkg.com/@fortawesome/free-brands-svg-icons/package.json`;
+        })
+      );
+    } catch (error) {}
+  }
+  // console.log(dependenciesOrdered.sort((a, b) => b.count - a.count));
 };
 sponsorThem();
