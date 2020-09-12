@@ -99,4 +99,21 @@ export const sponsorThem = async () => {
     console.log(dependenciesOrdered.filter((i) => i.funding));
   }
 };
-sponsorThem();
+
+export const followingSponsors = async () => {
+  const toSponsor: string[] = [];
+  const following = await cachedRequest("following", () =>
+    octokit.users.listFollowedByAuthenticated()
+  );
+  for await (const user of following.data) {
+    const result = await cachedRequest(
+      `sponsor-${user.login}`,
+      async () =>
+        (await axios.get(`https://github.com/sponsors/${user.login}`)).request
+          .res.responseUrl
+    );
+    if (result.includes("/sponsors/")) toSponsor.push(user.login);
+  }
+  console.log(toSponsor);
+};
+followingSponsors();
