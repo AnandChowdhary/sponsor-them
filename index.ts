@@ -67,7 +67,7 @@ export const sponsorThem = async () => {
       });
     }
   }
-  const dependenciesOrdered: Array<{
+  let dependenciesOrdered: Array<{
     name: string;
     count: number;
     funding?: string;
@@ -78,16 +78,25 @@ export const sponsorThem = async () => {
       count: dependencies[dependency],
     });
   });
+  dependenciesOrdered = dependenciesOrdered.sort((a, b) => b.count - a.count);
   for await (const dependency of Object.keys(dependencies)) {
+    console.log("Fetching package.json", dependency);
     let packageJson: any = null;
     try {
       packageJson = JSON.parse(
-        await cachedRequest(`dependency-json-${dependency}`, async () => {
-          return `https://unpkg.com/@fortawesome/free-brands-svg-icons/package.json`;
-        })
+        (await cachedRequest(`dependency-json-${dependency}`, async () => {
+          return (
+            await axios.get(`https://unpkg.com/${dependency}/package.json`)
+          ).data;
+        })) ?? null
       );
     } catch (error) {}
+    if (packageJson && packageJson.funding)
+      dependenciesOrdered = dependenciesOrdered.map((i) => {
+        if (i.name === dependency) i.funding = packageJson.funding;
+        return i;
+      });
+    console.log(dependenciesOrdered.filter((i) => i.funding));
   }
-  // console.log(dependenciesOrdered.sort((a, b) => b.count - a.count));
 };
 sponsorThem();
