@@ -1,9 +1,11 @@
 import { cosmicSync, config } from "@anandchowdhary/cosmic";
 import { Octokit } from "@octokit/rest";
 import { readFile, writeFile } from "fs/promises";
+import { existsSync, mkdirSync } from "fs";
 import { join } from "path";
 
 cosmicSync("sponsor");
+if (!existsSync(join(".", ".cache"))) mkdirSync(join(".", ".cache"));
 const octokit = new Octokit({
   auth: config<string>("githubToken"),
 });
@@ -22,5 +24,9 @@ const cachedRequest = async <T>(
 };
 
 export const sponsorThem = async () => {
-  const repos = await octokit.repos.listForAuthenticatedUser();
+  const repos = await cachedRequest("repos", () =>
+    octokit.repos.listForAuthenticatedUser()
+  );
+  console.log(repos);
 };
+sponsorThem();
